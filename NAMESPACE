@@ -1,0 +1,10 @@
+# exports
+export(familybias)
+
+S3method(print, familybias)
+S3method(mean, familybias)
+S3method(as.data.frame, familybias)
+
+# export data 
+
+#export(pro.gender.g, vprel.g)

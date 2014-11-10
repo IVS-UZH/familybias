@@ -1,0 +1,11 @@
+Package: familybias
+Type: Package
+Title: Family bias estimates (Bickel in press.)
+Version: 1.0
+Date: 2011-03-16
+Author: Balthasar Bickel, Taras Zakharko
+Maintainer: Taras Zakharko <taras.zakharko@gmail.com>
+Description: The package implements the estimation of family bias as described by (Bickel in press.) 
+License: BSD
+LazyLoad: yes
+Encoding: UTF-8
