@@ -1,5 +1,11 @@
 multiple.binom.test <- function(x, p.threshold=0.1)
 {
+	# print(x)
+	x <- table(x)
+	# print(x)
+	#
+	# stop()
+	
 	# do pair-wise binom tests
 	p.vals <- sapply(seq_along(x), function(i) binom.test(x[i], sum(x), p=1/length(x), alternative="greater")$p.value)
 	names(p.vals) <- names(x)
@@ -25,7 +31,7 @@ multiple.binom.test <- function(x, p.threshold=0.1)
 }
 
 
-familybias <- function(df, family.names, r.name, p.names=NULL, extrapolate=TRUE, 
+familybias <- function(df, family.names, r.name, response_is_continous = FALSE, p.names=NULL, extrapolate=TRUE, 
                        B=1000, small.family.size=4, diverse.r = "diverse", 
                        bias.test = multiple.binom.test, p.threshold = 0.1,
                        verbose=F, lapplyfunc=lapply, bias.override = list())
@@ -33,6 +39,8 @@ familybias <- function(df, family.names, r.name, p.names=NULL, extrapolate=TRUE,
 	# setup the result list
 	result <- structure(list(), class="familybias")
 	result$predictors <- p.names
+	
+	response_is_continous <- response_is_continous || !(is.factor(df[[r.name]]) || is.character(df[[r.name]]))
 	
 	# remove the factors from the data frame
 	t <- df
@@ -68,12 +76,16 @@ familybias <- function(df, family.names, r.name, p.names=NULL, extrapolate=TRUE,
 		
 	# split the units
 	if(verbose) cat("Splitting the data...\n")
-	result$units <- split.families(df, family.names, r.name, p.names, verbose)
+	result$units <- split.families(df, family.names, r.name, p.names, verbose, response_is_continous)
+	
 	
 	# estimate the bias of large families
 	if(verbose) cat("Estimating the bias of large language units...\n")
 	flush.console()
 	result$large.families.estimate <- test.families(result$units, small.family.size, diverse.r, bias.test, verbose, lapplyfunc, p.threshold, bias.override)
+
+	#return(result$large.families.estimate)
+		
 	
 	# combine units and large.families.estimate
 	result$units.estimate <- 
@@ -104,7 +116,7 @@ familybias <- function(df, family.names, r.name, p.names=NULL, extrapolate=TRUE,
 }
 
 
-split.families <- function(DF, family.names, r.name, p.names, verbose)
+split.families <- function(DF, family.names, r.name, p.names, verbose, response_is_continous=FALSE)
 {
 	# insert dummy names for non-specified levels
 	if(length(family.names)>1)
@@ -116,7 +128,7 @@ split.families <- function(DF, family.names, r.name, p.names, verbose)
 		
 	# split the languages acording to their families (highest taxonomic level)
 	units <-split(DF, DF[, family.names[1]], drop=T)
-	  
+		  
 	# this is the recursive splitting function
 	# it will attempt to split the languages into taxonomic groups 
 	# such that the predictor values are constant within each group
@@ -178,6 +190,9 @@ split.families <- function(DF, family.names, r.name, p.names, verbose)
 				function(x) length(unique(x)))==1)[1]
 		split.level <- rev(family.names)[split.level]
 		
+		response_is_continous <- F
+		if(!response_is_continous)
+		{
 		# one unit corresponds to a singel row in the resulting data frame
 		result <- as.data.frame(c(list(
 			# family.name
@@ -199,7 +214,35 @@ split.families <- function(DF, family.names, r.name, p.names, verbose)
    			paste("number.", unique(DF[, r.name]), sep=""),
    		    "number"
 		)
+	  }
+		else
+		{
+		# one unit corresponds to a singel row in the resulting data frame
+		result <- as.data.frame(c(list(
+			# family.name
+			as.character(unit[1, split.level]), 
+			# taxonomic.level
+			split.level), 
+			# p.names	 
+			lapply(unlist(unit[1, p.names]), as.character),
+			# total number of languages
+			list(nrow(unit))
+		))
+		# ...and set the column names
+		names(result) <- c(
+   			"family.name",
+  			"taxonomic.level",
+   			p.names,
+   		    "number"
+		)
+	  }	
+	
+		if (response_is_continous)
+			result$raw_responce <- I(list(unit[[r.name]]))
+		else
+			result$raw_responce <- I(list(factor(unit[[r.name]], levels=unique(DF[[r.name]]))))
 
+		
 		result 		
 	}))
 	
@@ -210,11 +253,14 @@ split.families <- function(DF, family.names, r.name, p.names, verbose)
 }
 
 
+
+
 test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, lapplyfunc=lapply, p.threshold, bias.override = list())
 {
 	# find the names of the columns which store the frequency data (of the response variable)
-	varfields <- grep("^number\\.", names(DF), value=T)
-	varlevels <- sub("^number\\.", "", varfields)
+	# varfields <- grep("^number\\.", names(DF), value=T)
+	# varlevels <- sub("^number\\.", "", varfields)
+	# <----- we move to raw_responce now!
 
 	# we can only test "large" families, so we extract them from the data
 	DF <- subset(DF, number>small.family.size)
@@ -225,8 +271,7 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 	result <- cbind(DF,  do.call(rbind, lapplyfunc(1:nrow(DF), function(row)
 	{
 		# test the frequency distribution
-		vars <- unlist(DF[row, varfields])
-		names(vars) <- varlevels
+		vars <- DF[row, 'raw_responce']
 		
 		family.name <- as.character(DF$family.name[[row]])
 				
@@ -254,8 +299,7 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 		}
 		else
 		{
-			mj.prop <- if (distribution %in% "diverse") NA
- 			else vars[which(varlevels %in% mj.val)]/sum(vars)
+			mj.prop <- if (distribution %in% "diverse") NA else sum(vars == mj.val)/length(vars)
 		}
 		
 		if (!is.numeric(mj.prop) || is.nan(mj.prop))
@@ -273,6 +317,9 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 	# we are done here
 	result
 }
+
+
+
 
 extrapolate.families <- function(dta,  p.names, small.family.size, B, diverse.r, verbose, lapplyfunc=lapply)
 {
@@ -610,3 +657,16 @@ mean.familybias <- function(x, ...)
 	
 	hdr
 }
+#
+#
+# ta <- c("stock", "mbranch", "sbranch", "ssbranch", "lsbranch", "language")
+# load('data/pro.gender.g.rda')
+#
+# pro.gender.g$xx <- rnorm(nrow(pro.gender.g))
+#
+# head(pro.gender.g)
+#
+# x <- familybias(pro.gender.g, ta, r.name='xx', B = 20, extrapolate=T)
+# x
+#
+# stop()
