@@ -32,7 +32,7 @@ multiple.binom.test <- function(x, p.threshold=0.1)
 
 
 familybias <- function(df, family.names, r.name, response_is_continous = FALSE, p.names=NULL, extrapolate=TRUE, 
-                       B=1, small.family.size=4, diverse.r = "diverse", 
+                       B=1000, small.family.size=4, diverse.r = "diverse", 
                        bias.test = multiple.binom.test, p.threshold = 0.1,
                        verbose=F, lapplyfunc=lapply, bias.override = list())
 {
