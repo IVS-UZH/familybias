@@ -32,7 +32,7 @@ multiple.binom.test <- function(x, p.threshold=0.1)
 
 
 familybias <- function(df, family.names, r.name, response_is_continous = FALSE, p.names=NULL, extrapolate=TRUE, 
-                       B=1000, small.family.size=4, diverse.r = "diverse", 
+                       B=1, small.family.size=4, diverse.r = "diverse", 
                        bias.test = multiple.binom.test, p.threshold = 0.1,
                        verbose=F, lapplyfunc=lapply, bias.override = list())
 {
@@ -280,16 +280,14 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 		else
 			bias.val <- bias.test(vars, p.threshold = p.threshold)
 		
-		distribution <- if(!is.na(bias.val)) "biased" else "diverse"
 		
 		if(verbose) setTxtProgressBar(pb, getTxtProgressBar(pb)+1)
 		
 		# determine the majority (modal) type
 		mj.val <- bias.val
-		if(is.na(mj.val)) mj.val <- diverse.r
 
-		
 		# determine the proportion of the majority type in the family
+		# plug in the override
 		if (family.name %in% names(bias.override))
 		{
 			mj.prop <- as.numeric(bias.override[[family.name]]$mj.prop)
@@ -306,8 +304,12 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 			# 	stop()
 			# }
 			#
-			mj.prop <- if (distribution %in% "diverse") NA else sum(vars %in% mj.val)/length(vars)
+			mj.prop <- if (is.na(mj.val)) NA else sum(vars %in% mj.val)/length(vars)
 		}
+		
+		distribution <- if(!is.na(mj.val)) "biased" else "diverse"
+		if(is.na(mj.val)) mj.val <- diverse.r
+		
 		
 		if (!is.numeric(mj.prop) || is.nan(mj.prop))
 			mj.prop <- NA
