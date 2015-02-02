@@ -92,7 +92,7 @@ familybias <- function(df, family.names, r.name, response_is_continous = FALSE, 
 	{	
 		small <- subset(result$units, !family.name %in% result$large.families.estimate$family.name)
 
-		if(nrow(small) ==0) x$large.families.estimate 
+		if(nrow(small) ==0) result$large.families.estimate 
 		else
 		{
 
@@ -271,7 +271,7 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 	result <- cbind(DF,  do.call(rbind, lapplyfunc(1:nrow(DF), function(row)
 	{
 		# test the frequency distribution
-		vars <- DF[row, 'raw_responce']
+		vars <- unlist(DF[row, 'raw_responce'])
 		
 		family.name <- as.character(DF$family.name[[row]])
 				
@@ -299,7 +299,14 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 		}
 		else
 		{
-			mj.prop <- if (distribution %in% "diverse") NA else sum(vars == mj.val)/length(vars)
+			# if(family.name == 'Semitic stock')
+			# {
+			# 	print(mj.val)
+			# 	print(vars)
+			# 	stop()
+			# }
+			#
+			mj.prop <- if (distribution %in% "diverse") NA else sum(vars %in% mj.val)/length(vars)
 		}
 		
 		if (!is.numeric(mj.prop) || is.nan(mj.prop))
@@ -644,8 +651,7 @@ mean.familybias <- function(x, ...)
 	Freq = numeric(length=nrow(hdr))
 	
 
-	
-	
+
 	for(ex in x$extrapolations) 
 	{
 		ex = do.call("paste", c(ex[, names(hdr), drop=F], sep = "\r"))
