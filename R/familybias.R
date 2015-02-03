@@ -238,9 +238,9 @@ split.families <- function(DF, family.names, r.name, p.names, verbose, response_
 	  }	
 	
 		if (response_is_continous)
-			result$raw_responce <- I(list(unit[[r.name]]))
+			result$raw_raw_response <- I(list(unit[[r.name]]))
 		else
-			result$raw_responce <- I(list(factor(unit[[r.name]], levels=unique(DF[[r.name]]))))
+			result$raw_raw_response <- I(list(factor(unit[[r.name]], levels=unique(DF[[r.name]]))))
 
 		
 		result 		
@@ -260,7 +260,7 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 	# find the names of the columns which store the frequency data (of the response variable)
 	# varfields <- grep("^number\\.", names(DF), value=T)
 	# varlevels <- sub("^number\\.", "", varfields)
-	# <----- we move to raw_responce now!
+	# <----- we move to raw_raw_response now!
 
 	# we can only test "large" families, so we extract them from the data
 	DF <- subset(DF, number>small.family.size)
@@ -271,7 +271,7 @@ test.families <- function(DF, small.family.size, diverse.r, bias.test, verbose, 
 	result <- cbind(DF,  do.call(rbind, lapplyfunc(1:nrow(DF), function(row)
 	{
 		# test the frequency distribution
-		vars <- unlist(DF[row, 'raw_responce'])
+		vars <- unlist(DF[row, 'raw_raw_response'])
 		
 		family.name <- as.character(DF$family.name[[row]])
 				
