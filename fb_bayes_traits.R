@@ -300,10 +300,10 @@ mean.familybias <- function(x, ...)
 		for(i in seq_along(hdr0))
 			Freq[i] = Freq[i] + sum(ex %in% hdr0[i])
     
-    cat('---\n')
-    print(ex)
-    print(Freq)
-    stop()
+    # cat('---\n')
+    # print(ex)
+    # print(Freq)
+    # stop()
 	}
 	
 	hdr$Freq <- Freq/length(x$extrapolations)
@@ -324,14 +324,14 @@ mean.familybias <- function(x, ...)
 
 
 # do not run
-# data(vprel.g)
-# head(vprel.g)
+data(vprel.g)
+head(vprel.g)
+
+taxa.names = c("stock", "mbranch", "sbranch", "ssbranch", "lsbranch", "language")
+
+
+x <- familybias_bayestraits(df = vprel.g, family.names = taxa.names,
+                        r.name = 'DRYREL0', p.names = 'DRYSOV4',
+                        extrapolate=F, small.family.size=4, B=50)
 #
-# taxa.names = c("stock", "mbranch", "sbranch", "ssbranch", "lsbranch", "language")
-#
-#
-# x <- familybias_bayestraits(df = vprel.g, family.names = taxa.names,
-#                         r.name = 'DRYREL0', p.names = 'DRYSOV4',
-#                         extrapolate=F, small.family.size=4, B=50)
-#
-# x
+mean(x$fbias.pre.correction)
